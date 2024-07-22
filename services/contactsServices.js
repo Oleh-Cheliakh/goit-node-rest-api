@@ -67,13 +67,11 @@ async function addContact(name, email, phone) {
 	}
 }
 
-async function renewContact(id, ...data) {
+async function renewContact(id, data) {
 	try {
 		const contactsData = await listContacts();
 
-		const index = contactsData.findIndex((contact) => {
-			contact.id === id;
-		});
+		const index = contactsData.findIndex((contact) => contact.id === id);
 
 		if (index === -1) {
 			return null;
