@@ -7,72 +7,61 @@ import {
 } from "../services/contactsServices.js";
 
 import HttpError from "../helpers/HttpError.js";
+import { controllerWrapper } from "../decorator/controllerWrapper.js";
 
-export const getAllContacts = async (req, res) => {
+const getAllContacts = controllerWrapper(async (req, res) => {
 	const contactsList = await listContacts();
 
 	res.status(200).json(contactsList);
-};
+});
 
-export const getOneContact = async (req, res) => {
+const getOneContact = controllerWrapper(async (req, res) => {
 	const { id } = req.params;
 	const foundedContact = await getContactById(id);
 
-	if (foundedContact) {
-		return res.status(200).json(foundedContact);
+	if (!foundedContact) {
+		throw HttpError(404);
 	}
-	const { status, message } = HttpError(404);
-	res.status(status).json({ message });
-};
+	res.status(200).json(foundedContact);
+});
 
-export const deleteContact = async (req, res) => {
+const deleteContact = controllerWrapper(async (req, res) => {
 	const { id } = req.params;
 
 	const removedContact = await removeContact(id);
 
-	if (removedContact) {
-		return res.status(200).json(removedContact);
+	if (!removedContact) {
+		throw HttpError(404);
 	}
-	const { status, message } = HttpError(404);
-	res.status(status).json({ message });
-};
+	res.status(200).json(removedContact);
+});
 
-export const createContact = async (req, res) => {
-	try {
-		const { name, email, phone } = req.body;
+const createContact = controllerWrapper(async (req, res) => {
+	const addedContact = await addContact(req.body);
 
-		const addedContact = await addContact(name, email, phone);
+	res.status(201).json(addedContact);
+});
 
-		res.status(201).json(addedContact);
-	} catch (error) {
-		const { status, message } = HttpError(400, error.message);
-		res.status(status).json({ message });
+const updateContact = controllerWrapper(async (req, res) => {
+	if (Object.keys(req.body).length === 0) {
+		throw HttpError(400, "Body must have at least one field");
 	}
-};
 
-export const updateContact = async (req, res) => {
-	try {
-		if (Object.keys(req.body).length === 0) {
-			const { status, message } = HttpError(
-				400,
-				"Body must have at least one field",
-			);
-			return res.status(status).json({ message });
-		}
+	const { id } = req.params;
 
-		const { id } = req.params;
+	const updatedContact = await renewContact(id, req.body);
 
-		const updatedContact = await renewContact(id, req.body);
-
-		if (updatedContact) {
-			return res.status(200).json(updatedContact);
-		}
-
-		const { status, message } = HttpError(404);
-
-		res.status(status).json({ message });
-	} catch (error) {
-		const { status, message } = HttpError(400, error.message);
-		res.status(status).json({ status, message });
+	if (!updatedContact) {
+		throw HttpError(404);
 	}
+
+	res.status(200).json(updatedContact);
+});
+
+export {
+	getAllContacts,
+	getOneContact,
+	deleteContact,
+	createContact,
+	updateContact,
 };
