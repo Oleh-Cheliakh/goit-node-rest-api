@@ -4,6 +4,7 @@ import {
 	removeContact,
 	addContact,
 	renewContact,
+	updateStatusContact,
 } from "../services/contactsServices.js";
 
 import HttpError from "../helpers/HttpError.js";
@@ -58,10 +59,23 @@ const updateContact = controllerWrapper(async (req, res) => {
 	res.status(200).json(updatedContact);
 });
 
+const favoriteContact = controllerWrapper(async (req, res) => {
+	const { id } = req.params;
+
+	const favoriteContact = await updateStatusContact(id, req.body);
+
+	if (!favoriteContact) {
+		throw HttpError(404);
+	}
+
+	res.status(200).json(favoriteContact);
+});
+
 export {
 	getAllContacts,
 	getOneContact,
 	deleteContact,
 	createContact,
 	updateContact,
+	favoriteContact,
 };

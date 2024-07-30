@@ -1,63 +1,61 @@
-import fs from "fs/promises";
-import path from "path";
-import crypto from "crypto";
-
-const contactsPath = path.resolve("db/contacts.json");
+import { User } from "../db/index.js";
 
 async function listContacts() {
-	const contactsData = await fs.readFile(contactsPath);
-	return JSON.parse(contactsData);
+	const contactsData = await User.findAll();
+	return contactsData;
 }
 
 async function getContactById(contactId) {
-	const contactsData = await listContacts();
-
-	const foundContact = contactsData.find((contact) => contact.id === contactId);
+	const foundContact = await User.findByPk(contactId);
 
 	return foundContact || null;
 }
 
 async function removeContact(contactId) {
-	const contactsData = await listContacts();
 	const deletedContact = await getContactById(contactId);
-	if (deletedContact) {
-		const filteredContacts = contactsData.filter((contact) => {
-			return contact.id !== deletedContact.id;
-		});
 
-		await fs.writeFile(contactsPath, JSON.stringify(filteredContacts, null, 2));
+	if (!deletedContact) {
+		return null;
 	}
+
+	await deletedContact.destroy();
+
 	return deletedContact;
 }
 
 async function addContact(data) {
-	const contactsData = await listContacts();
-	const newContact = {
-		id: crypto.randomBytes(16).toString("hex"),
-		...data,
-	};
+	const newContact = User.build(data);
 
-	contactsData.push(newContact);
-
-	await fs.writeFile(contactsPath, JSON.stringify(contactsData, null, 2));
+	await newContact.save();
 
 	return newContact;
 }
 
 async function renewContact(id, data) {
-	const contactsData = await listContacts();
+	const updatedContact = await User.update({ ...data }, { where: { id: id } });
 
-	const index = contactsData.findIndex((contact) => contact.id === id);
-
-	if (index === -1) {
+	if (!updatedContact) {
 		return null;
 	}
 
-	contactsData[index] = { ...contactsData[index], ...data };
+	const targetContact = await getContactById(id);
 
-	await fs.writeFile(contactsPath, JSON.stringify(contactsData, null, 2));
+	return targetContact;
+}
 
-	return contactsData[index];
+async function updateStatusContact(id, data) {
+	const favoriteContact = await User.update(
+		{ favorite: data.favorite },
+		{ where: { id: id } },
+	);
+
+	if (!favoriteContact) {
+		return null;
+	}
+
+	const targetContact = await getContactById(id);
+
+	return targetContact;
 }
 
 export {
@@ -66,4 +64,5 @@ export {
 	removeContact,
 	addContact,
 	renewContact,
+	updateStatusContact,
 };
