@@ -5,6 +5,7 @@ import "dotenv/config";
 
 import sequelize from "./db/sequelize.js";
 import User from "./db/models/Contact.js";
+import UserData from "./db/models/User.js";
 
 import contactsRouter from "./routes/contactsRouter.js";
 
@@ -29,6 +30,8 @@ try {
 	await sequelize.authenticate();
 
 	await User.sync();
+
+	await UserData.sync();
 
 	console.log("Database connection successful");
 
