@@ -1,7 +1,10 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import { connectDB } from "./db/index.js";
+import "dotenv/config";
+
+import sequelize from "./db/sequelize.js";
+import User from "./db/models/Contact.js";
 
 import contactsRouter from "./routes/contactsRouter.js";
 
@@ -22,7 +25,17 @@ app.use((err, req, res, next) => {
 	res.status(status).json({ message });
 });
 
-app.listen(3000, async () => {
-	await connectDB();
-	console.log("Server is running. Use our API on port: 3000");
-});
+try {
+	await sequelize.authenticate();
+
+	await User.sync();
+
+	console.log("Database connection successful");
+
+	app.listen(3000, async () => {
+		console.log("Server is running. Use our API on port: 3000");
+	});
+} catch (error) {
+	console.log(error.message);
+	process.exit(1);
+}

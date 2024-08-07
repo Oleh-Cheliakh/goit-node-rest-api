@@ -1,62 +1,45 @@
-import { User } from "../db/index.js";
+import User from "../db/models/Contact.js";
 
-async function listContacts() {
-	const contactsData = await User.findAll();
-	return contactsData;
-}
+const listContacts = () => User.findAll();
 
-async function getContactById(contactId) {
-	const foundContact = await User.findByPk(contactId);
+const getContactById = (contactId) => User.findByPk(contactId);
 
-	return foundContact || null;
-}
+const removeContact = async (id) => {
+	const contactPreparedToDeletion = await getContactById(id);
 
-async function removeContact(contactId) {
-	const deletedContact = await getContactById(contactId);
+	const deletedContactStatus = await User.destroy({
+		where: {
+			id,
+		},
+	});
 
-	if (!deletedContact) {
-		return null;
-	}
+	return deletedContactStatus ? contactPreparedToDeletion : null;
+};
 
-	await deletedContact.destroy();
+const addContact = (data) => User.create(data);
 
-	return deletedContact;
-}
+const renewContact = async (id, data) => {
+	const contactUpdateStatus = await User.update(data, {
+		where: {
+			id,
+		},
+	});
 
-async function addContact(data) {
-	const newContact = User.build(data);
+	return contactUpdateStatus ? await getContactById(id) : null;
+};
 
-	await newContact.save();
-
-	return newContact;
-}
-
-async function renewContact(id, data) {
-	const updatedContact = await User.update({ ...data }, { where: { id: id } });
-
-	if (!updatedContact) {
-		return null;
-	}
-
-	const targetContact = await getContactById(id);
-
-	return targetContact;
-}
-
-async function updateStatusContact(id, data) {
-	const favoriteContact = await User.update(
+const updateStatusContact = async (id, data) => {
+	const contactUpdateStatus = await User.update(
 		{ favorite: data.favorite },
-		{ where: { id: id } },
+		{
+			where: {
+				id,
+			},
+		},
 	);
 
-	if (!favoriteContact) {
-		return null;
-	}
-
-	const targetContact = await getContactById(id);
-
-	return targetContact;
-}
+	return contactUpdateStatus ? await getContactById(id) : null;
+};
 
 export {
 	listContacts,
