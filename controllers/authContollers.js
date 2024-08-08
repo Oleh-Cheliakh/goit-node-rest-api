@@ -1,9 +1,44 @@
-import { controllerWrapper } from "../decorator/controllerWrapper";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-import HttpError from "../helpers/HttpError";
+import { controllerWrapper } from "../decorator/controllerWrapper.js";
 
-const signUp = controllerWrapper(async (res, req) => {
-	return null;
+import { signUp, findUser } from "../services/authServices.js";
+import HttpError from "../helpers/HttpError.js";
+
+const registerUser = controllerWrapper(async (req, res) => {
+	const newUser = await signUp(req.body);
+
+	res.status(201).json({
+		user: {
+			email: newUser.email,
+			subscription: newUser.subscription,
+		},
+	});
 });
 
-export { signUp };
+const logIn = controllerWrapper(async (req, res) => {
+	const { email, password } = req.body;
+
+	const user = await findUser({ email });
+
+	const comparePassword = await bcrypt.compare(password, user.password);
+
+	if (!user || !comparePassword) {
+		throw HttpError(401, "Email or password is wrong");
+	}
+
+	const { JWT_SECRET } = process.env;
+
+	const payload = {
+		id: user.id,
+	};
+
+	const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+
+	res.json({
+		token,
+	});
+});
+
+export { registerUser, logIn };
